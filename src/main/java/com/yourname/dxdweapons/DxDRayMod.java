@@ -53,6 +53,7 @@ public class DxDRayMod {
                         output.accept(ModItems.BOOSTED_GEAR.get());
                         output.accept(ModItems.CHESS_PAWN.get());
                         output.accept(ModItems.GREEN_BALL.get());
+                        output.accept(ModItems.TIER10_EXP_BOTTLE.get());
                         output.accept(ModItems.TRADER_SPAWN_EGG.get());
                     })
                     .build());

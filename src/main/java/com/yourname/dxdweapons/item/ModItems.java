@@ -31,6 +31,10 @@ public class ModItems {
             () -> new SpawnEggItem(ModEntities.TRADER.get(), 0x8B5E34, 0xE8B88A,
                     new Item.Properties()));
 
+    public static final DeferredItem<Tier10ExpBottleItem> TIER10_EXP_BOTTLE =
+            ITEMS.register("tier10_exp_bottle",
+                    () -> new Tier10ExpBottleItem(new Item.Properties().stacksTo(16)));
+
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);
     }
