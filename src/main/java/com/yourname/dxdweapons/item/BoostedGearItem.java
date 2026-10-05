@@ -2,6 +2,7 @@ package com.yourname.dxdweapons.item;
 
 import com.yourname.dxdweapons.attachment.ModAttachments;
 import com.yourname.dxdweapons.effect.ModEffects;
+import com.yourname.dxdweapons.network.EquipModeHandler;
 import com.yourname.dxdweapons.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -45,6 +46,7 @@ import net.neoforged.neoforge.common.ItemAbilities;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,13 +70,35 @@ public class BoostedGearItem extends Item {
     private static final int THRUST_COOLDOWN_TICKS = 20;
     private static final double DASH_SPEED = 0.8;
     private static final int DASH_TICKS = 12;
+    /** Dash damage as a fraction of the wielder's attack damage attribute. */
+    private static final float DASH_DAMAGE_SCALE = 1.0F;
+    private static final double DASH_KNOCKBACK = 0.4;
     private static final Map<UUID, Integer> THRUST_READY_AT = new HashMap<>();
     private static final Map<UUID, DashState> DASH_STATES = new HashMap<>();
     private static final int BOOST_TICKS = 200;
     private static final double BOOST_REACH_BONUS = 3.0;
     private static final double BOOST_SPEED_BONUS = 0.4;
 
-    public record DashState(int remaining, double dirX, double dirZ) {
+    public static final class DashState {
+        private int remaining;
+        private final double dirX;
+        private final double dirZ;
+        private final Set<Integer> alreadyHit = new HashSet<>();
+
+        private DashState(int remaining, double dirX, double dirZ) {
+            this.remaining = remaining;
+            this.dirX = dirX;
+            this.dirZ = dirZ;
+        }
+
+        private DashState step() {
+            this.remaining--;
+            return this;
+        }
+    }
+
+    public static boolean isDashing(UUID uuid) {
+        return DASH_STATES.containsKey(uuid);
     }
 
     public static void tickDash(ServerPlayer player) {
@@ -83,7 +107,7 @@ public class BoostedGearItem extends Item {
         DASH_STATES.remove(player.getUUID());
 
         Level level = player.level();
-        Vec3 step = new Vec3(state.dirX() * DASH_SPEED, 0.0, state.dirZ() * DASH_SPEED);
+        Vec3 step = new Vec3(state.dirX * DASH_SPEED, 0.0, state.dirZ * DASH_SPEED);
 
         if (!level.noCollision(player, player.getBoundingBox().move(step))) {
             player.setIgnoreFallDamageFromCurrentImpulse(false);
@@ -97,11 +121,47 @@ public class BoostedGearItem extends Item {
         player.hasImpulse = true;
         player.hurtMarked = true;
 
-        if (state.remaining() > 1) {
-            DASH_STATES.put(player.getUUID(), new DashState(state.remaining() - 1, state.dirX(), state.dirZ()));
+        damagePassedThrough(player, state);
+
+        if (state.remaining > 1) {
+            DASH_STATES.put(player.getUUID(), state.step());
         } else {
             player.setIgnoreFallDamageFromCurrentImpulse(false);
         }
+    }
+
+    /** Hits every unit the dash slides through, each one at most once per dash. */
+    private static void damagePassedThrough(ServerPlayer player, DashState state) {
+        AABB box = player.getBoundingBox().inflate(THRUST_HITBOX_MARGIN);
+        List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, box,
+                e -> e != player && e.isAlive() && !e.isSpectator());
+
+        if (targets.isEmpty()) return;
+
+        float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE) * DASH_DAMAGE_SCALE;
+        DamageSource source = player.damageSources().playerAttack(player);
+        boolean hitAny = false;
+
+        for (LivingEntity target : targets) {
+            if (!state.alreadyHit.add(target.getId())) continue;
+            if (target.hurt(source, damage)) {
+                hitAny = true;
+                knockbackFromDash(player, target, state);
+            }
+        }
+
+        if (hitAny) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.PLAYER_ATTACK_SWEEP, player.getSoundSource(), 0.7F, 1.3F);
+        }
+    }
+
+    private static void knockbackFromDash(ServerPlayer player, LivingEntity target, DashState state) {
+        double push = DASH_KNOCKBACK;
+        Vec3 motion = new Vec3(state.dirX * push, 0.35, state.dirZ * push);
+        target.hurtMarked = true;
+        target.push(motion.x, motion.y, motion.z);
+        target.hasImpulse = true;
     }
 
     public BoostedGearItem(Properties properties) {
@@ -167,6 +227,10 @@ public class BoostedGearItem extends Item {
             return stack;
         }
 
+        // The forward dash is a transformed-mode ability only. The piercing jab itself still works
+        // for everyone, so without equip mode this degrades to a plain thrust with no cooldown.
+        boolean canDash = EquipModeHandler.isEquipMode(uuid);
+
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         double reach = Math.min(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE), THRUST_RANGE);
@@ -177,15 +241,13 @@ public class BoostedGearItem extends Item {
             return stack;
         }
 
-        THRUST_READY_AT.put(uuid, THRUST_COOLDOWN_TICKS);
-        DASH_STATES.put(player.getUUID(), new DashState(DASH_TICKS, look.x, look.z));
-        player.setDeltaMovement(
-                look.x * DASH_SPEED,
-                player.getDeltaMovement().y,
-                look.z * DASH_SPEED);
-        player.setIgnoreFallDamageFromCurrentImpulse(true);
-        player.hasImpulse = true;
-        player.hurtMarked = true;
+        if (canDash) {
+            THRUST_READY_AT.put(uuid, THRUST_COOLDOWN_TICKS);
+            DASH_STATES.put(uuid, new DashState(DASH_TICKS, look.x, look.z));
+            player.setIgnoreFallDamageFromCurrentImpulse(true);
+            player.hasImpulse = true;
+            player.hurtMarked = true;
+        }
 
         AABB search = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.0, 0.5, 1.0);
         List<LivingEntity> candidates = level.getEntitiesOfClass(LivingEntity.class, search,

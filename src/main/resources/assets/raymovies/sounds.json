@@ -2,10 +2,9 @@
   "boosted_gear.boost": {
     "sounds": [
       {
-        "name": "raymovies:boost",
-        "stream": true
+        "name": "raymovies:boost"
       }
     ],
-    "subtitle": "Boost!!"
+    "subtitle": "boost.raymovies.boosted_gear.boost"
   }
 }
