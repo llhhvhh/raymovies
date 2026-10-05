@@ -13,6 +13,11 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
 public class FirstPersonGauntletRender {
+    // Must match GauntletRenderLayer so the gauntlet looks identical in first and third person.
+    private static final float ARM_DOWN = 0.34F;
+    private static final float WIDTH_RATIO = 0.30F;
+    private static final float LENGTH_RATIO = 0.44F;
+
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
         if (event.getHand() != InteractionHand.MAIN_HAND) return;
@@ -43,9 +48,11 @@ public class FirstPersonGauntletRender {
         poseStack.mulPose(Axis.YP.rotationDegrees(f * f6 * 70.0F));
         poseStack.mulPose(Axis.ZP.rotationDegrees(f * f5 * -20.0F));
 
-        // offset from shoulder pivot to forearm
-        poseStack.translate(0.0F, 0.5F, 0.0F);
-        poseStack.scale(0.6f, 0.6f, 0.6f);
+        // Sit on the forearm with the fist toward the hand, matching the third person layer.
+        poseStack.translate(0.0F, -ARM_DOWN, 0.0F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+        poseStack.scale(WIDTH_RATIO, LENGTH_RATIO, WIDTH_RATIO);
+        poseStack.translate(-0.5F, -0.5F, -0.5F);
 
         Minecraft.getInstance().getItemRenderer().renderStatic(
                 player, gauntlet, ItemDisplayContext.NONE, false,
