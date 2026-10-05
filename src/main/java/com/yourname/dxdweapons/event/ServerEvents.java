@@ -48,6 +48,9 @@ public class ServerEvents {
     private static final Set<UUID> BLESSING_ACTIVE = new HashSet<>();
     private static final Map<UUID, Integer> BLESSING_SPEED_LEVEL = new HashMap<>();
 
+    /** Temporarily disabled: the 24-block 6x6/4x4 cherry tree is unwanted for now. Flip to true to restore. */
+    private static final boolean SPAWN_CHERRY_TREE = false;
+
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -83,10 +86,12 @@ public class ServerEvents {
                         }
                         player.teleportTo(teleTarget.getX() + 0.5, teleTarget.getY(), teleTarget.getZ() + 0.5);
 
-                        int treeX = nearest.getX();
-                        int treeZ = nearest.getZ();
-                        int treeY = overworld.getHeight(Heightmap.Types.WORLD_SURFACE, treeX, treeZ);
-                        buildCherryTree(overworld, treeX, treeY, treeZ);
+                        if (SPAWN_CHERRY_TREE) {
+                            int treeX = nearest.getX();
+                            int treeZ = nearest.getZ();
+                            int treeY = overworld.getHeight(Heightmap.Types.WORLD_SURFACE, treeX, treeZ);
+                            buildCherryTree(overworld, treeX, treeY, treeZ);
+                        }
                     }
                 }
             }
