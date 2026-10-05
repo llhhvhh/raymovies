@@ -42,6 +42,10 @@ repo/
 ### Editors / AI tooling ###
 .cursor/
 
+# Local-only development notes. Contains machine-specific paths (deploy target,
+# JAVA_HOME, offline maven proxy) and is not useful to mod players.
+/AGENTS.md
+
 ### Local network & environment workarounds (do NOT commit) ###
 # init.gradle hardcodes an absolute local-repo path and a 127.0.0.1:18080 proxy.
 # The proxy/download scripts are only useful on machines that cannot reach
