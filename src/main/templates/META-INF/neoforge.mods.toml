@@ -1,0 +1,50 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="llhhvhh"
+logoFile="logo.png"
+displayURL="https://github.com/llhhvhh/raymovies"
+issueTrackerURL="https://github.com/llhhvhh/raymovies/issues"
+credits="llhhvhh"
+description='''
+血怒契约 (Devil Contract) - 为 Minecraft 1.21.1 / NeoForge 添加赤龙帝的笼手 (Boosted Gear) 与绿球 (Green Ball)。
+
+笼手 (Boosted Gear):
+- 4.5 格攻击距离
+- 按 V 键叠加 Boost 强化，每层 +4 伤害（最高 10 层）
+- 右键发动矛突刺：贯穿直线上的所有敌人并向前冲刺，冷却 1 秒
+- 可切换 镐 / 斧 / 铲 / 锄 工具形态
+- 按 G 键进入装备模式解锁飞行、祝福与空间领域
+
+空间领域 (Spatial Aura):
+- 范围内所有单位（除自己外）每 2 秒受到 0.5 点伤害
+- 半径与持续时间随等级提升
+
+其他: 商人交易、僵尸稀有掉落国际象棋兵、首次登录赠送合成指南（需 Patchouli）。
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="patchouli"
+    type="optional"
+    versionRange="[1.21,)"
+    ordering="NONE"
+    side="BOTH"

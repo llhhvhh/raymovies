@@ -1,0 +1,22 @@
+{
+  "name": "entry.raymovies.boosted_gear.zh",
+  "category": "raymovies:recipes",
+  "icon": "raymovies:boosted_gear",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "entry.raymovies.boosted_gear.title.zh",
+      "text": "entry.raymovies.boosted_gear.page1.zh"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "raymovies:boosted_gear",
+      "text": "entry.raymovies.boosted_gear.page2.zh"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "entry.raymovies.boosted_gear.usage_title.zh",
+      "text": "entry.raymovies.boosted_gear.page3.zh"
+    }
+  ]
+}

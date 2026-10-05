@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:jigsaw",
+  "biomes": "#raymovies:has_structure/custom_building",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "beard_thin",
+  "start_pool": "raymovies:custom_building",
+  "size": 6,
+  "max_distance_from_center": 116,
+  "use_expansion_hack": false,
+  "start_height": {
+    "absolute": 64
+  }
+}

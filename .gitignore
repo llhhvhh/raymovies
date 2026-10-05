@@ -1,0 +1,52 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+
+.run/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Minecraft Modding ###
+run/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Editors / AI tooling ###
+.cursor/
+
+### Local network & environment workarounds (do NOT commit) ###
+# init.gradle hardcodes an absolute local-repo path and a 127.0.0.1:18080 proxy.
+# The proxy/download scripts are only useful on machines that cannot reach
+# maven.neoforged.net directly. Keep them local; CI and normal builds do not need them.
+init.gradle
+download_deps.ps1
+neoforge_proxy.ps1
+proxy.ps1

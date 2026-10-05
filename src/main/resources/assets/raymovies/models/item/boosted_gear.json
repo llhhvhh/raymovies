@@ -1,0 +1,29 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "raymovies:item/boosted_gear"
+  },
+  "display": {
+    "gui": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "ground": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "fixed": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "thirdperson_righthand": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "thirdperson_lefthand": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "firstperson_righthand": {
+      "scale": [1.5, 1.5, 1.5]
+    },
+    "firstperson_lefthand": {
+      "scale": [1.5, 1.5, 1.5]
+    }
+  }
+}

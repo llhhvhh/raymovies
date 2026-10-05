@@ -1,0 +1,15 @@
+{
+  "loader": "neoforge:obj",
+  "model": "raymovies:models/item/bing.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "shade_quads": false,
+  "emissive_ambient": false,
+  "textures": {
+    "particle": "raymovies:item/chess_pawn"
+  },
+  "transform": {
+    "translation": [0.5, 0.5, 0],
+    "origin": "center"
+  }
+}
