@@ -6,9 +6,12 @@ import com.yourname.dxdweapons.network.EquipModeHandler;
 import com.yourname.dxdweapons.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -42,6 +45,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
+
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -79,11 +84,21 @@ public class BoostedGearItem extends Item {
     private static final double BOOST_REACH_BONUS = 3.0;
     private static final double BOOST_SPEED_BONUS = 0.4;
 
+    // --- dash presentation tunables ---
+    private static final int DASH_START_PARTICLES = 24;
+    private static final int DASH_TRAIL_PARTICLES = 3;
+    private static final double DASH_TRAIL_SPACING = 0.35;
+    private static final float DASH_TRAIL_COLOR_R = 0.90F;
+    private static final float DASH_TRAIL_COLOR_G = 0.10F;
+    private static final float DASH_TRAIL_COLOR_B = 0.18F;
+    private static final float DASH_TRAIL_SCALE = 1.4F;
+
     public static final class DashState {
         private int remaining;
         private final double dirX;
         private final double dirZ;
         private final Set<Integer> alreadyHit = new HashSet<>();
+        private double trailDistance;
 
         private DashState(int remaining, double dirX, double dirZ) {
             this.remaining = remaining;
@@ -91,8 +106,9 @@ public class BoostedGearItem extends Item {
             this.dirZ = dirZ;
         }
 
-        private DashState step() {
+        private DashState step(double travelled) {
             this.remaining--;
+            this.trailDistance += travelled;
             return this;
         }
     }
@@ -111,6 +127,7 @@ public class BoostedGearItem extends Item {
 
         if (!level.noCollision(player, player.getBoundingBox().move(step))) {
             player.setIgnoreFallDamageFromCurrentImpulse(false);
+            burstAt(player, player.position());
             return;
         }
 
@@ -122,11 +139,58 @@ public class BoostedGearItem extends Item {
         player.hurtMarked = true;
 
         damagePassedThrough(player, state);
+        spawnTrail(player, state, step.length());
 
         if (state.remaining > 1) {
-            DASH_STATES.put(player.getUUID(), state.step());
+            DASH_STATES.put(player.getUUID(), state.step(step.length()));
         } else {
             player.setIgnoreFallDamageFromCurrentImpulse(false);
+            burstAt(player, player.position());
+        }
+    }
+
+    /** One-off burst when the dash starts or is cut short. */
+    private static void burstAt(ServerPlayer player, Vec3 at) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+        serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                at.x, at.y + 0.9, at.z, 1, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    /** Crimson dust dropped along the path, spaced by distance so fast dashes still look continuous. */
+    private static void spawnTrail(ServerPlayer player, DashState state, double travelled) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+        state.trailDistance += travelled;
+
+        int count = (int) (state.trailDistance / DASH_TRAIL_SPACING);
+        if (count <= 0) return;
+        state.trailDistance -= count * DASH_TRAIL_SPACING;
+
+        Vec3 at = player.position();
+        DustParticleOptions dust = new DustParticleOptions(
+                new Vector3f(DASH_TRAIL_COLOR_R, DASH_TRAIL_COLOR_G, DASH_TRAIL_COLOR_B),
+                DASH_TRAIL_SCALE);
+        serverLevel.sendParticles(dust,
+                at.x, at.y + 0.6, at.z,
+                Math.min(count, DASH_TRAIL_PARTICLES),
+                0.18, 0.35, 0.18, 0.02);
+    }
+
+    /** Swing, kick off the sound and throw a burst of crimson dust where the dash begins. */
+    private static void startDashPresentation(Level level, Player player, ItemStack stack) {
+        player.swing(InteractionHand.MAIN_HAND);
+
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.PLAYER_ATTACK_SWEEP, player.getSoundSource(), 0.9F, 0.7F);
+
+        if (level instanceof ServerLevel serverLevel) {
+            Vec3 at = player.position();
+            DustParticleOptions dust = new DustParticleOptions(
+                    new Vector3f(DASH_TRAIL_COLOR_R, DASH_TRAIL_COLOR_G, DASH_TRAIL_COLOR_B),
+                    DASH_TRAIL_SCALE + 0.6F);
+            serverLevel.sendParticles(dust,
+                    at.x, at.y + 0.8, at.z,
+                    DASH_START_PARTICLES,
+                    0.35, 0.45, 0.35, 0.03);
         }
     }
 
@@ -247,6 +311,7 @@ public class BoostedGearItem extends Item {
             player.setIgnoreFallDamageFromCurrentImpulse(true);
             player.hasImpulse = true;
             player.hurtMarked = true;
+            startDashPresentation(level, player, stack);
         }
 
         AABB search = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.0, 0.5, 1.0);
